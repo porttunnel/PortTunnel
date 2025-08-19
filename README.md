@@ -49,13 +49,13 @@ Then open in your browser:
 
 ## Method 2: Install as a System Service (Binary Installation)
 
-# Clone the repository
+#### Clone the repository
 ```
 git clone https://github.com/porttunnel/PortTunnel.git
 cd PortTunnel
 ```
 
-# Make the installation script executable and run it
+#### Make the installation script executable and run it
 ```
 chmod +x install-porttunnel.sh
 sudo ./install-porttunnel.sh
