@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # === Config (change if you fork/move the binary) ===
-PT_URL="https://github.com/ahm3d/PortTunnel/raw/refs/heads/main/dist/porttunnel"
+PT_URL="https://github.com/porttunnel/PortTunnel/raw/refs/heads/main/dist/PortTunnel"
 PT_BIN="/usr/local/bin/porttunnel"
 PT_USER="porttunnel"
 PT_GROUP="porttunnel"
