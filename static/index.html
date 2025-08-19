@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="auto">
+<head>
+  <meta charset="utf-8">
+  <title>Port Tunnel Manager</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Bootstrap + Icons -->
+  <link href="/static/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <script src="/static/dist/js/jquery-3.7.1.min.js"></script>
+  <style>
+    :root {
+      --ptm-gradient-light: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      --ptm-gradient-dark: linear-gradient(135deg, #0c0c14 0%, #1e1e2e 100%);
+      --card-blur: blur(15px);
+      --glass-bg-light: rgba(255, 255, 255, 0.8);
+      --glass-border-light: rgba(255, 255, 255, 0.25);
+      --glass-bg-dark: rgba(20, 20, 30, 0.75);
+      --glass-border-dark: rgba(255, 255, 255, 0.12);
+      --text-light: #212529;
+      --text-dark: #e9ecef;
+      --shadow-light: 0 10px 40px rgba(0, 0, 0, 0.12);
+      --shadow-dark: 0 10px 40px rgba(0, 0, 0, 0.45);
+      --success-gradient: linear-gradient(135deg, #00b09b 0%, #96c93d 100%);
+      --primary-gradient: linear-gradient(135deg, #4b6cb7 0%, #182848 100%);
+    }
+
+    [data-bs-theme="light"] {
+      --ptm-bg: var(--ptm-gradient-light);
+      --glass-bg: var(--glass-bg-light);
+      --glass-border: var(--glass-border-light);
+      --text-color: var(--text-light);
+      --card-shadow: var(--shadow-light);
+    }
+
+    [data-bs-theme="dark"] {
+      --ptm-bg: var(--ptm-gradient-dark);
+      --glass-bg: var(--glass-bg-dark);
+      --glass-border: var(--glass-border-dark);
+      --text-color: var(--text-dark);
+      --card-shadow: var(--shadow-dark);
+    }
+
+    body {
+      min-height: 100vh;
+      background: var(--ptm-bg) fixed;
+      background-size: cover;
+      color: var(--text-color);
+      transition: background 0.5s ease, color 0.3s ease;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    }
+
+    .nav-glass {
+      backdrop-filter: var(--card-blur);
+      background: var(--glass-bg);
+      border-bottom: 1px solid var(--glass-border);
+      transition: all 0.3s ease;
+      padding: 0.8rem 0;
+    }
+
+    .page-wrap {
+      padding-top: 2rem;
+      padding-bottom: 3rem;
+    }
+
+    .glass-card {
+      backdrop-filter: var(--card-blur);
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      border-radius: 18px;
+      box-shadow: var(--card-shadow);
+      transition: all 0.3s ease;
+      overflow: hidden;
+    }
+
+    .title-hero {
+      color: #fff;
+      text-shadow: 0 2px 20px rgba(0, 0, 0, 0.25);
+      font-weight: 800;
+      letter-spacing: -0.5px;
+    }
+
+    .sub-hero {
+      color: rgba(255, 255, 255, 0.92);
+      font-weight: 400;
+    }
+
+    .muted {
+      opacity: 0.75;
+    }
+
+    #pageLoader {
+      position: fixed;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      backdrop-filter: blur(15px);
+      background: rgba(0, 0, 0, 0.18);
+      z-index: 2000;
+      transition: opacity 0.3s ease;
+    }
+
+    [data-bs-theme="dark"] #pageLoader {
+      background: rgba(0, 0, 0, 0.45);
+    }
+
+    [data-bs-theme="light"] .feature-badge {
+    color:#000000 !important;
+    }
+
+    #pageLoader.hide {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .loader-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #fff;
+      display: inline-block;
+      margin: 0 5px;
+      animation: bounce 1.2s infinite ease-in-out;
+    }
+
+    .loader-dot:nth-child(2) { animation-delay: 0.15s; }
+    .loader-dot:nth-child(3) { animation-delay: 0.30s; }
+
+    @keyframes bounce {
+      0%, 80%, 100% { transform: scale(0); }
+      40% { transform: scale(1); }
+    }
+
+    .fab {
+      position: fixed;
+      right: 28px;
+      bottom: 28px;
+      z-index: 1500;
+      border-radius: 50%;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      width: 64px;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--success-gradient);
+      border: none;
+      color: white;
+      font-weight: 600;
+    }
+
+    .fab:hover {
+      transform: translateY(-5px) scale(1.05);
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+    }
+
+    .table > :not(caption) > * > * {
+      background-color: transparent !important;
+    }
+
+    .table thead th {
+      border-bottom-color: var(--glass-border);
+      font-weight: 600;
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-color);
+      opacity: 0.8;
+    }
+
+    .table-striped tbody tr:nth-of-type(odd) {
+      background: rgba(0, 0, 0, 0.04) !important;
+    }
+
+    [data-bs-theme="dark"] .table-striped tbody tr:nth-of-type(odd) {
+      background: rgba(255, 255, 255, 0.05) !important;
+    }
+
+    [data-bs-theme="light"] .toast-body {
+    color:#000000 !important;
+    }
+
+    .form-control, .form-select {
+      background-color: rgba(255, 255, 255, 0.12);
+      border-color: var(--glass-border);
+      color: var(--text-color);
+      transition: all 0.3s ease;
+      border-radius: 10px;
+      padding: 0.75rem 1rem;
+    }
+
+    .form-control:focus, .form-select:focus {
+      background-color: rgba(255, 255, 255, 0.18);
+      border-color: var(--glass-border);
+      box-shadow: 0 0 0 0.25rem rgba(255, 255, 255, 0.15);
+      color: var(--text-color);
+    }
+
+    .btn {
+      transition: all 0.3s ease;
+      border-radius: 10px;
+      font-weight: 500;
+      padding: 0.6rem 1.2rem;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+    }
+
+    .btn-primary {
+      background: var(--primary-gradient);
+      border: none;
+    }
+
+    .badge {
+      font-weight: 500;
+      padding: 0.5rem 0.75rem;
+      border-radius: 8px;
+    }
+
+    .toast {
+      backdrop-filter: var(--card-blur);
+      background: var(--glass-bg) !important;
+      border: 1px solid var(--glass-border);
+      border-radius: 12px;
+    }
+
+    .modal-content {
+      backdrop-filter: var(--card-blur);
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      border-radius: 18px;
+    }
+
+    .modal-header {
+      border-bottom-color: var(--glass-border);
+      padding: 1.2rem 1.5rem;
+    }
+
+    .modal-footer {
+      border-top-color: var(--glass-border);
+      padding: 1.2rem 1.5rem;
+    }
+
+    .btn-close {
+      filter: var(--text-color) invert(1);
+      opacity: 0.7;
+    }
+
+    [data-bs-theme="dark"] .btn-close {
+      filter: invert(1);
+    }
+
+    .card-hover {
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .card-hover:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+    }
+
+    .status-indicator {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      display: inline-block;
+      margin-right: 8px;
+    }
+
+    .status-online {
+      background: #00d26a;
+      box-shadow: 0 0 10px rgba(0, 210, 106, 0.5);
+    }
+
+    .status-offline {
+      background: #ff5c5c;
+    }
+
+    .hero-icon {
+      font-size: 2.5rem;
+      background: linear-gradient(135deg, #fff 0%, rgba(255, 255, 255, 0.7) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 1rem;
+      display: inline-block;
+    }
+
+    .feature-badge {
+      backdrop-filter: var(--card-blur);
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      border-radius: 12px;
+      padding: 0.5rem 1rem;
+      font-size: 0.85rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .tunnel-row {
+      transition: all 0.3s ease;
+    }
+
+    .tunnel-row:hover {
+      background: rgba(255, 255, 255, 0.05) !important;
+    }
+
+    @media (max-width: 768px) {
+      .display-5 {
+        font-size: 2.2rem;
+      }
+
+      .glass-card {
+        border-radius: 16px;
+      }
+
+      .fab {
+        right: 20px;
+        bottom: 20px;
+        width: 56px;
+        height: 56px;
+      }
+
+      .hero-icon {
+        font-size: 2rem;
+      }
+    }
+
+    /* Custom scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 10px;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 10px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+    [data-bs-theme="dark"] .form-select {
+    background-color: rgba(30, 30, 40, 0.8);
+      color: #e9ecef;
+      border-color: rgba(255, 255, 255, 0.15);
+    }
+
+    [data-bs-theme="dark"] .form-select:focus {
+      background-color: rgba(30, 30, 40, 0.9);
+      border-color: rgba(255, 255, 255, 0.25);
+      box-shadow: 0 0 0 0.25rem rgba(255, 255, 255, 0.15);
+      color: #e9ecef;
+    }
+
+    [data-bs-theme="dark"] .form-select option {
+      background-color: #1e1e28;
+      color: #e9ecef;
+    }
+
+    [data-bs-theme="dark"] .form-select option:hover {
+      background-color: #2a2a3c;
+    }
+  </style>
+</head>
+<body>
+
+<div id="pageLoader">
+  <div class="text-center text-white">
+    <div class="mb-3"><span class="loader-dot"></span><span class="loader-dot"></span><span class="loader-dot"></span></div>
+    <div class="fw-semibold fs-5">Loading</div>
+    <div class="small muted">Checking server session…</div>
+  </div>
+</div>
+
+<nav class="navbar nav-glass">
+  <div class="container">
+    <span class="navbar-brand fw-semibold d-flex align-items-center gap-2">
+      <i class="bi bi-box-arrow-in-up-right"></i> Port Tunnel Manager
+    </span>
+    <div class="ms-auto d-flex align-items-center gap-2">
+      <button id="themeToggle" class="btn btn-sm btn-outline-secondary">
+        <i class="bi bi-moon-stars" id="themeIcon"></i> <span class="d-none d-sm-inline" id="themeLabel">Dark</span>
+      </button>
+    </div>
+  </div>
+</nav>
+
+<header class="container py-5">
+  <div class="row align-items-center">
+    <div class="col-lg-8">
+      <div class="hero-icon">
+        <i class="bi bi-box-arrow-in-up-right"></i>
+      </div>
+      <h1 class="title-hero fw-bold display-5 mb-2">Expose Local Ports via Your VPS</h1>
+      <p class="sub-hero lead mb-3">Add, enable/disable, list and delete reverse SSH tunnels with a sleek web UI.</p>
+      <div class="d-flex gap-2 flex-wrap">
+        <span class="feature-badge text-white"><i class="bi bi-shield-check"></i> Secure SSH Connections</span>
+        <span class="feature-badge text-white"><i class="bi bi-lightning"></i> Easy Management</span>
+        <span class="feature-badge text-white"><i class="bi bi-palette"></i> Dark/Light Mode</span>
+      </div>
+    </div>
+    <div class="col-lg-4 text-lg-end mt-5 mt-lg-0">
+      <div class="glass-card p-3 d-inline-block">
+        <div class="d-flex align-items-center">
+          <div class="status-indicator status-offline" id="connectionStatusIndicator"></div>
+          <small id="connectionStatusText">Not Connected</small>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main class="container page-wrap">
+
+  <section id="connectCard" class="glass-card p-4 mb-4 card-hover">
+    <div class="d-flex align-items-center justify-content-between mb-3">
+      <h5 class="mb-0"><i class="bi bi-plug"></i> Connect to VPS</h5>
+      <span class="text-muted small">Password used once to set up key auth & sshd</span>
+    </div>
+    <form id="connectForm" class="row gy-3">
+      <div class="col-md-4">
+        <label class="form-label">Host/IP</label>
+        <input name="host" class="form-control" placeholder="203.0.113.10" required>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">User</label>
+        <input name="user" class="form-control" value="root" required>
+      </div>
+      <div class="col-md-2">
+        <label class="form-label">SSH Port</label>
+        <input name="ssh_port" class="form-control" type="number" value="22" min="1" max="65535" required>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Password</label>
+        <input name="password" class="form-control" type="password" required>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">Local SSH Key Path</label>
+        <input name="ssh_key_path" class="form-control" value="~/.ssh/id_ed25519">
+        <div class="form-text">Will be created if missing.</div>
+      </div>
+      <div class="col-12 d-flex gap-2">
+        <button class="btn btn-primary" type="submit" id="btnConnect">
+          <span class="spinner-border spinner-border-sm d-none" id="connSpin"></span>
+          Connect & Prepare
+        </button>
+        <div id="connectError" class="text-danger small align-self-center d-none"></div>
+      </div>
+    </form>
+  </section>
+
+  <section id="dashboard" class="d-none">
+
+    <div class="glass-card p-4 mb-4 card-hover">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="mb-0"><i class="bi bi-hdd-network"></i> Server Details</h5>
+        <div class="d-flex gap-2">
+          <button class="btn btn-outline-danger btn-sm" id="btnDisconnect"><i class="bi bi-power"></i> Disconnect</button>
+        </div>
+      </div>
+      <div id="serverDetails" class="row g-3 small"></div>
+    </div>
+
+    <div class="glass-card p-4 card-hover">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="mb-0"><i class="bi bi-diagram-3"></i> Active Tunnels</h5>
+        <div class="d-flex gap-2">
+          <button class="btn btn-outline-secondary btn-sm" id="btnAutoRefresh"><i class="bi bi-arrow-repeat me-1"></i>Auto: Off</button>
+          <button class="btn btn-outline-secondary btn-sm" id="btnRefresh"><i class="bi bi-arrow-clockwise me-1"></i>Refresh</button>
+        </div>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-striped align-middle" id="tunnelTable">
+          <thead>
+          <tr>
+            <th>Name</th><th>VPS</th><th>Remote</th><th>Local</th><th>Status</th><th class="text-center">Active</th><th class="text-end">Delete</th>
+          </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div id="listErr" class="text-danger small d-none"></div>
+    </div>
+  </section>
+
+</main>
+
+<button class="btn btn-success fab d-none" id="openAddModal"><i class="bi bi-plus-lg fs-5"></i></button>
+
+<!-- Add Modal -->
+<div class="modal fade" id="addModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content glass-card">
+      <div class="modal-header">
+        <h6 class="modal-title"><i class="bi bi-node-plus"></i> Add Tunnel</h6>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form id="addForm">
+        <div class="modal-body">
+          <div class="row g-3">
+            <div class="col-md-6"><label class="form-label">Name</label><input class="form-control" name="name" placeholder="web80" required></div>
+            <div class="col-md-6"><label class="form-label">Remote Port (VPS)</label><input class="form-control" name="remote_bind_port" type="number" placeholder="8080" required></div>
+            <div class="col-md-6">
+              <label class="form-label">Application Ports</label>
+              <select class="form-select" id="appPorts">
+                <option value="">Select an application...</option>
+                <option value="80">Web Server (HTTP)</option>
+                <option value="443">Web Server (HTTPS)</option>
+                <option value="3306">MySQL</option>
+                <option value="5432">PostgreSQL</option>
+                <option value="27017">MongoDB</option>
+                <option value="6379">Redis</option>
+                <option value="11211">Memcached</option>
+                <option value="21">FTP</option>
+                <option value="22">SSH</option>
+                <option value="3389">RDP</option>
+                <option value="5900">VNC</option>
+                <option value="1716">KDE Connect (1714-1764)</option>
+                <option value="8080">Web Server (Alt)</option>
+                <option value="8443">Web Server (HTTPS Alt)</option>
+                <option value="3000">Node.js Dev</option>
+                <option value="8000">Python Dev</option>
+                <option value="9000">PHP Dev</option>
+              </select>
+            </div>
+            <div class="col-md-6"><label class="form-label">Local Port</label><input class="form-control" name="local_port" type="number" placeholder="80" required></div>
+            <div class="col-md-6"><label class="form-label">Remote Bind Host</label><input class="form-control" name="remote_bind_host" value="0.0.0.0"></div>
+            <div class="col-md-6"><label class="form-label">Local Host</label><input class="form-control" name="local_host" value="127.0.0.1"></div>
+            <div class="col-12"><div id="addErr" class="text-danger small d-none"></div></div>
+          </div>
+        </div>
+        <div class="modal-footer d-flex gap-2">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-success" id="btnAdd"><span class="spinner-border spinner-border-sm d-none" id="addSpin"></span>Create Tunnel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Toasts (moved to bottom-left) -->
+<div class="position-fixed bottom-0 start-0 p-3" style="z-index: 1080">
+  <div id="toast" class="toast align-items-center text-bg-dark border-0" role="alert" aria-live="assertive" aria-atomic="true">
+    <div class="d-flex">
+      <div class="toast-body" id="toastBody">Done.</div>
+      <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+    </div>
+  </div>
+</div>
+
+<script src="/static/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+let autoTimer = null, addModal;
+function toast(msg){ $("#toastBody").text(msg); new bootstrap.Toast(document.getElementById('toast'), { delay: 2200 }).show(); }
+
+function setTheme(theme){
+  document.documentElement.setAttribute('data-bs-theme', theme);
+  localStorage.setItem('ptm-theme', theme);
+  const dark = theme === 'dark';
+  $("#themeIcon").attr('class', dark ? 'bi bi-sun' : 'bi bi-moon-stars');
+  $("#themeLabel").text(dark ? 'Light' : 'Dark');
+}
+function initTheme(){
+  const saved = localStorage.getItem('ptm-theme');
+  setTheme(saved ? saved : (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'));
+}
+$("#themeToggle").on("click", () => {
+  const cur = document.documentElement.getAttribute('data-bs-theme') || 'light';
+  setTheme(cur === 'light' ? 'dark' : 'light');
+});
+
+function showError($el, msg){ $el.text(msg).removeClass('d-none'); setTimeout(()=> $el.addClass('d-none').text(''), 6000); }
+function escapeHtml(x){ return (x===null||x===undefined) ? "" : String(x).replace(/[&<>"']/g, s=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s])); }
+function jsq(s){ return String(s).replace(/'/g,"\\'"); }
+
+function updateConnectionStatus(connected) {
+  const indicator = $("#connectionStatusIndicator");
+  const text = $("#connectionStatusText");
+
+  if (connected) {
+    indicator.removeClass("status-offline").addClass("status-online");
+    text.text("Connected");
+    $("#openAddModal").removeClass("d-none");
+  } else {
+    indicator.removeClass("status-online").addClass("status-offline");
+    text.text("Not Connected");
+    $("#openAddModal").addClass("d-none");
+  }
+}
+
+function renderServerDetails(s){
+  const safe = (v) => (v ?? "").toString().replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  const html = `
+    <div class="col-md-4"><strong>Host</strong><div>${safe(s.host)}</div></div>
+    <div class="col-md-4"><strong>User</strong><div>${safe(s.user)}</div></div>
+    <div class="col-md-4"><strong>SSH Port</strong><div>${safe(s.ssh_port)}</div></div>
+    <div class="col-md-4"><strong>Hostname</strong><div>${safe(s.hostname)}</div></div>
+    <div class="col-md-4"><strong>Distro</strong><div>${safe(s.distro)}</div></div>
+    <div class="col-md-4"><strong>Uptime</strong><div>${safe(s.uptime)}</div></div>
+    <div class="col-12"><strong>Kernel</strong><div><code>${safe(s.kernel)}</code></div></div>
+  `;
+  $("#serverDetails").html(html);
+}
+
+function loadServer(initial=false){
+  $.get("/server").done(res=>{
+    renderServerDetails(res.server);
+    $("#dashboard").removeClass("d-none");
+    $("#connectCard").addClass("d-none");
+    updateConnectionStatus(true);
+    loadTunnels();
+  }).fail(()=>{
+    $("#connectCard").removeClass("d-none");
+    $("#dashboard").addClass("d-none");
+    updateConnectionStatus(false);
+  }).always(()=>{ if (initial) hideLoader(); });
+}
+
+function loadTunnels(){
+  $.get("/tunnels").done(data=>{
+    const tbody = $("#tunnelTable tbody").empty();
+    if (!data.length){
+      tbody.append(`<tr><td colspan="7" class="text-muted text-center py-4">No active tunnels</td></tr>`);
+      return;
+    }
+    data.forEach(t=>{
+      const badge = t.running ? '<span class="badge text-bg-success">Running</span>' : `<span class="badge text-bg-secondary">Disabled</span>`;
+      const switchId = `sw-${encodeURIComponent(t.name)}`;
+      const row = `<tr class="tunnel-row">
+        <td>${escapeHtml(t.name)}</td>
+        <td>${escapeHtml(t.vps_user)}@${escapeHtml(t.vps_host)}:${escapeHtml(t.vps_ssh_port)}</td>
+        <td><code>${escapeHtml(t.remote_bind)}</code></td>
+        <td><code>${escapeHtml(t.local_bind)}</code></td>
+        <td>${badge}</td>
+        <td class="text-center">
+          <div class="form-check form-switch m-0 d-inline-block">
+            <input class="form-check-input" type="checkbox" role="switch" id="${switchId}"
+                   ${t.active ? "checked" : ""} onchange="toggleTunnel('${jsq(t.name)}', this)">
+          </div>
+        </td>
+        <td class="text-end">
+          <button class="btn btn-sm btn-outline-danger" onclick="deleteTunnel('${jsq(t.name)}')"><i class="bi bi-trash3"></i> Delete</button>
+        </td>
+      </tr>`;
+      tbody.append(row);
+    });
+  }).fail(err=>{
+    showError($("#listErr"), err.responseText || "Failed to load tunnels");
+  });
+}
+
+function toggleTunnel(name, checkbox){
+  const enabled = checkbox.checked;
+  $(checkbox).prop('disabled', true);
+  const url = "/tunnels/" + encodeURIComponent(name) + (enabled ? "/enable" : "/disable");
+  $.ajax({ url, type: "PATCH" })
+    .done(()=>{ toast(enabled ? "Tunnel enabled" : "Tunnel disabled"); loadTunnels(); })
+    .fail(err=>{
+      checkbox.checked = !enabled;
+      showError($("#listErr"), err.responseText || "Failed to toggle tunnel");
+    })
+    .always(()=> $(checkbox).prop('disabled', false));
+}
+
+function deleteTunnel(name){
+  if (!confirm(`Delete tunnel "${name}"?`)) return;
+  $.ajax({url: "/tunnels/" + encodeURIComponent(name), type: "DELETE"})
+    .done(()=>{ loadTunnels(); toast("Tunnel deleted"); })
+    .fail(err=> showError($("#listErr"), err.responseText || "Failed to delete tunnel"));
+}
+
+$("#btnRefresh").on("click", loadTunnels);
+$("#btnAutoRefresh").on("click", function(){
+  if (autoTimer){ clearInterval(autoTimer); autoTimer=null; $(this).removeClass("btn-success").addClass("btn-outline-secondary").html('<i class="bi bi-arrow-repeat me-1"></i>Auto: Off'); }
+  else { loadTunnels(); autoTimer=setInterval(loadTunnels,3000); $(this).removeClass("btn-outline-secondary").addClass("btn-success").html('<i class="bi bi-arrow-repeat me-1"></i>Auto: On'); }
+});
+$("#connectForm").on("submit", function(e){
+  e.preventDefault();
+  $("#connectError").addClass("d-none").text("");
+  $("#btnConnect").prop("disabled", true);
+  $("#connSpin").removeClass("d-none");
+  showLoader("Preparing server…");
+  const payload = {}; $(this).serializeArray().forEach(i => payload[i.name] = i.value);
+  $.ajax({ url:"/connect", type:"POST", contentType:"application/json", data: JSON.stringify(payload) })
+    .done(res=>{ renderServerDetails(res.server); $("#dashboard").removeClass("d-none"); $("#connectCard").addClass("d-none"); updateConnectionStatus(true); loadTunnels(); toast("Connected to VPS"); })
+    .fail(err=> showError($("#connectError"), err.responseText || "Connect failed"))
+    .always(()=>{ $("#btnConnect").prop("disabled", false); $("#connSpin").addClass("d-none"); hideLoader(); });
+});
+$("#btnDisconnect").on("click", function(){
+  if(!confirm("Disconnect from VPS and stop all tunnels?")) return;
+  showLoader("Disconnecting…");
+  $.post("/disconnect").done(()=>{
+    if (autoTimer){ clearInterval(autoTimer); autoTimer=null; }
+    $("#dashboard").addClass("d-none"); $("#connectCard").removeClass("d-none");
+    updateConnectionStatus(false);
+    $("#serverDetails").empty(); $("#tunnelTable tbody").empty(); toast("Disconnected");
+  }).fail(err=> alert("Error disconnecting: " + (err.responseText || "unknown error")))
+    .always(hideLoader);
+});
+$("#openAddModal").on("click", function(){
+  addModal = addModal || new bootstrap.Modal(document.getElementById('addModal'));
+  $("#addForm")[0].reset(); $("#addErr").addClass("d-none").text(""); addModal.show();
+});
+$("#addForm").on("submit", function(e){
+  e.preventDefault(); $("#addErr").addClass("d-none").text(""); $("#btnAdd").prop("disabled", true); $("#addSpin").removeClass("d-none");
+  const payload = {}; $(this).serializeArray().forEach(i => payload[i.name] = i.value);
+  payload.remote_bind_port = Number(payload.remote_bind_port); payload.local_port = Number(payload.local_port);
+  $.ajax({ url:"/tunnels", type:"POST", contentType:"application/json", data: JSON.stringify(payload) })
+    .done(()=>{ addModal.hide(); loadTunnels(); toast("Tunnel created"); })
+    .fail(err=> showError($("#addErr"), err.responseText || "Failed to add tunnel"))
+    .always(()=>{ $("#btnAdd").prop("disabled", false); $("#addSpin").addClass("d-none"); });
+});
+
+function showLoader(msg){
+  if (msg) { $("#pageLoader .fw-semibold").text(msg); $("#pageLoader .small").text(''); }
+  else { $("#pageLoader .fw-semibold").text('Loading'); $("#pageLoader .small").text('Working…'); }
+  $("#pageLoader").removeClass("hide");
+}
+function hideLoader(){ $("#pageLoader").addClass("hide"); }
+
+initTheme();
+$(function(){
+  addModal = new bootstrap.Modal(document.getElementById('addModal'));
+  updateConnectionStatus(false);
+  $.get("/server").done(res=>{
+    renderServerDetails(res.server);
+    $("#dashboard").removeClass("d-none");
+    $("#connectCard").addClass("d-none");
+    updateConnectionStatus(true);
+    loadTunnels();
+  }).fail(()=>{
+    $("#connectCard").removeClass("d-none");
+    $("#dashboard").addClass("d-none");
+    updateConnectionStatus(false);
+  }).always(()=> hideLoader());
+});
+// Handle app port selection
+$("#appPorts").on("change", function() {
+  const port = $(this).val();
+  if (port) {
+    $("input[name='local_port']").val(port);
+    // Set remote port to same value
+    $("input[name='remote_bind_port']").val(port);
+    // Auto-generate name if empty
+    if (!$("input[name='name']").val()) {
+      const appName = $("#appPorts option:selected").text().split('(')[0].trim().toLowerCase().replace(/\s+/g, '');
+      $("input[name='name']").val(appName + port);
+    }
+  }
+});
+</script>
+</body>
+</html>

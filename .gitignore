@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# PyInstaller
+build/
+#dist/
+*.spec
+
+# Backup files
+*.bak
+
+# Logs and temp
+*.log
+*.tmp
+*.swp
+
